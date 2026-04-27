@@ -1,8 +1,16 @@
 data "aws_caller_identity" "current" {}
 
-module "vpc" {
+module "vpc_primary" {
   source = "github.com/aaditya-2905/Terraform-wrappers//wrappers/vpc-wrapper?ref=main"
-  vpcs   = var.vpcs
+  vpcs   = { primary = var.vpcs["primary"] }
+}
+
+module "vpc_secondary" {
+  source = "github.com/aaditya-2905/Terraform-wrappers//wrappers/vpc-wrapper?ref=main"
+  providers = {
+    aws = aws.secondary
+  }
+  vpcs = { secondary = var.vpcs["secondary"] }
 }
 
 data "aws_subnets" "primary_public" {
@@ -53,14 +61,14 @@ data "aws_subnets" "secondary_private" {
   }
 }
 
-module "sg" {
+module "sg_primary" {
   source = "github.com/aaditya-2905/Terraform-wrappers//wrappers/sg-wrapper?ref=main"
 
   sgs = {
     primary = {
       name        = "three-tier-primary-sg"
       description = "Security group for primary region"
-      vpc_id      = module.vpc.vpc_ids["primary"]
+      vpc_id      = module.vpc_primary.vpc_ids["primary"]
       environment = "prod"
 
       ingress_rules = [
@@ -74,11 +82,20 @@ module "sg" {
         { from_port = 0, to_port = 0, protocol = "-1", cidr_blocks = ["0.0.0.0/0"] }
       ]
     }
+  }
+}
 
+module "sg_secondary" {
+  source = "github.com/aaditya-2905/Terraform-wrappers//wrappers/sg-wrapper?ref=main"
+  providers = {
+    aws = aws.secondary
+  }
+
+  sgs = {
     secondary = {
       name        = "three-tier-secondary-sg"
       description = "Security group for secondary region"
-      vpc_id      = module.vpc.vpc_ids["secondary"]
+      vpc_id      = module.vpc_secondary.vpc_ids["secondary"]
       environment = "prod"
       environment = "prod"
 
@@ -102,9 +119,9 @@ module "alb_primary" {
   name                       = var.primary_alb_name
   internal                   = var.primary_alb_internal
   environment                = var.primary_alb_environment
-  vpc_id                     = module.vpc.vpc_ids["primary"]
+  vpc_id                     = module.vpc_primary.vpc_ids["primary"]
   subnet_ids                 = data.aws_subnets.primary_public.ids
-  sg_id                      = module.sg.sg_ids["primary"]
+  sg_id                      = module.sg_primary.sg_ids["primary"]
   enable_deletion_protection = false
 
   target_groups = var.primary_alb_target_groups
@@ -118,9 +135,9 @@ module "alb_secondary" {
   name                       = var.secondary_alb_name
   internal                   = var.secondary_alb_internal
   environment                = var.secondary_alb_environment
-  vpc_id                     = module.vpc.vpc_ids["secondary"]
+  vpc_id                     = module.vpc_secondary.vpc_ids["secondary"]
   subnet_ids                 = data.aws_subnets.secondary_public.ids
-  sg_id                      = module.sg.sg_ids["secondary"]
+  sg_id                      = module.sg_secondary.sg_ids["secondary"]
   enable_deletion_protection = false
 
   target_groups = var.secondary_alb_target_groups
@@ -149,11 +166,21 @@ locals {
   }
 }
 
-module "ecs" {
+module "ecs_primary" {
   source = "github.com/aaditya-2905/Terraform-wrappers//wrappers/ecs-wrapper?ref=main"
 
-  clusters     = var.ecs_clusters
-  ecs_services = local.processed_ecs_services
+  clusters     = { primary = var.ecs_clusters["primary"] }
+  ecs_services = { for k, v in local.processed_ecs_services : k => v if v.cluster_name == "three-tier-primary" }
+}
+
+module "ecs_secondary" {
+  source = "github.com/aaditya-2905/Terraform-wrappers//wrappers/ecs-wrapper?ref=main"
+  providers = {
+    aws = aws.secondary
+  }
+
+  clusters     = { secondary = var.ecs_clusters["secondary"] }
+  ecs_services = { for k, v in local.processed_ecs_services : k => v if v.cluster_name == "three-tier-secondary" }
 }
 
 module "cloudfront" {
@@ -183,13 +210,13 @@ module "rds_global" {
     aws.secondary = aws.secondary
   }
 
-  primary_vpc_id   = module.vpc.vpc_ids["primary"]
+  primary_vpc_id   = module.vpc_primary.vpc_ids["primary"]
   primary_subnets  = data.aws_subnets.primary_private.ids
   primary_vpc_cidr = var.vpcs["primary"].cidr_block
-  primary_sg_id    = module.sg.sg_ids["primary"]
+  primary_sg_id    = module.sg_primary.sg_ids["primary"]
 
-  secondary_vpc_id   = module.vpc.vpc_ids["secondary"]
+  secondary_vpc_id   = module.vpc_secondary.vpc_ids["secondary"]
   secondary_subnets  = data.aws_subnets.secondary_private.ids
   secondary_vpc_cidr = var.vpcs["secondary"].cidr_block
-  secondary_sg_id    = module.sg.sg_ids["secondary"]
+  secondary_sg_id    = module.sg_secondary.sg_ids["secondary"]
 }

@@ -379,7 +379,7 @@ variable "cloudfront_distributions" {
 variable "s3_bucket_name" {
   description = "Name of the S3 bucket for frontend hosting"
   type        = string
-  default     = "three-tier-frontend-bucket"
+  default     = "three-tier-frontend-bucket-aaditya-2901"
 }
 
 variable "s3_force_destroy" {
