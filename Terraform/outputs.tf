@@ -1,8 +1,3 @@
-# ═══════════════════════════════════════════════════════════════
-# Outputs — Three-Tier Application
-# ═══════════════════════════════════════════════════════════════
-
-# ─── VPC ──────────────────────────────────────────────────────
 output "vpc_ids" {
   description = "IDs of created VPCs"
   value       = module.vpc.vpc_ids
@@ -28,13 +23,11 @@ output "secondary_private_subnet_ids" {
   value       = data.aws_subnets.secondary_private.ids
 }
 
-# ─── Security Groups ─────────────────────────────────────────
 output "sg_ids" {
   description = "IDs of created security groups"
   value       = module.sg.sg_ids
 }
 
-# ─── ALB ──────────────────────────────────────────────────────
 output "primary_alb_dns" {
   description = "DNS name of the primary ALB"
   value       = module.alb_primary.alb_dns_name
@@ -65,13 +58,11 @@ output "secondary_alb_target_group_arns" {
   value       = module.alb_secondary.target_group_arns
 }
 
-# ─── IAM ──────────────────────────────────────────────────────
 output "iam_role_arns" {
   description = "ARNs of created IAM roles"
   value       = module.iam.role_arns
 }
 
-# ─── ECR ──────────────────────────────────────────────────────
 output "ecr_repository_urls" {
   description = "Repository URLs of created ECR repositories"
   value       = module.ecr.repository_urls
@@ -82,7 +73,6 @@ output "ecr_repository_arns" {
   value       = module.ecr.repository_arns
 }
 
-# ─── ECS ──────────────────────────────────────────────────────
 output "ecs_cluster_arns" {
   description = "ARNs of created ECS clusters"
   value       = module.ecs.cluster_arns
@@ -93,7 +83,6 @@ output "ecs_service_arns" {
   value       = module.ecs.service_arns
 }
 
-# ─── CloudFront ───────────────────────────────────────────────
 output "cloudfront_distribution_ids" {
   description = "IDs of created CloudFront distributions"
   value       = module.cloudfront.distribution_ids
@@ -104,7 +93,6 @@ output "cloudfront_domain_names" {
   value       = module.cloudfront.distribution_domain_names
 }
 
-# ─── S3 ───────────────────────────────────────────────────────
 output "s3_frontend_bucket_id" {
   description = "Name of the frontend S3 bucket"
   value       = module.s3_frontend.bucket_id
@@ -116,8 +104,6 @@ output "s3_frontend_bucket_arn" {
 }
 
 
-
-# ─── RDS Global ──────────────────────────────────────────────
 output "rds_global_cluster_id" {
   description = "ID of the Aurora Global Cluster"
   value       = module.rds_global.global_cluster_id
