@@ -66,6 +66,9 @@ data "aws_subnets" "secondary_private" {
 
 module "sg_primary" {
   source = "github.com/aaditya-2905/Terraform-wrappers//wrappers/sg-wrapper?ref=main"
+  providers = {
+    aws = aws.primary
+  }
 
   sgs = {
     primary = {
@@ -90,13 +93,15 @@ module "sg_primary" {
 
 module "sg_secondary" {
   source = "github.com/aaditya-2905/Terraform-wrappers//wrappers/sg-wrapper?ref=main"
+  providers = {
+    aws = aws.secondary
+  }
 
   sgs = {
     secondary = {
       name        = "three-tier-secondary-sg"
       description = "Security group for secondary region"
       vpc_id      = module.vpc_secondary.vpc_ids["secondary"]
-      environment = "prod"
       environment = "prod"
 
       ingress_rules = [
@@ -115,6 +120,9 @@ module "sg_secondary" {
 
 module "alb_primary" {
   source = "github.com/aaditya-2905/Terraform-wrappers//wrappers/alb-wrapper?ref=main"
+  providers = {
+    aws = aws.primary
+  }
 
   name                       = var.primary_alb_name
   internal                   = var.primary_alb_internal
@@ -130,8 +138,10 @@ module "alb_primary" {
 
 module "alb_secondary" {
   source = "github.com/aaditya-2905/Terraform-wrappers//wrappers/alb-wrapper?ref=main"
+  providers = {
+    aws = aws.secondary
+  }
 
-  aws_region                 = var.secondary_region
   name                       = var.secondary_alb_name
   internal                   = var.secondary_alb_internal
   environment                = var.secondary_alb_environment
@@ -146,6 +156,9 @@ module "alb_secondary" {
 
 module "iam" {
   source = "github.com/aaditya-2905/Terraform-wrappers//wrappers/iam-wrapper?ref=main"
+  providers = {
+    aws = aws.primary
+  }
 
   roles              = var.iam_roles
   policies           = var.iam_policies
@@ -154,20 +167,34 @@ module "iam" {
 
 module "ecr" {
   source       = "github.com/aaditya-2905/Terraform-wrappers//wrappers/ecr-wrapper?ref=main"
+  providers = {
+    aws = aws.primary
+  }
   repositories = var.ecr_repositories
 }
 
 locals {
-  # Dynamically inject the CI/CD image tag for the backend service
+  # Dynamically inject the CI/CD image tag and DB credentials for the backend service
   processed_ecs_services = {
     for k, v in var.ecs_services : k => merge(v, {
       image = k == "backend" ? "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.aws_region}.amazonaws.com/${var.ecr_repositories["backend"].name}:${var.backend_image_tag}" : v.image
+      environment_variables = k == "backend" ? {
+        DB_HOST = v.cluster_name == "three-tier-primary" ? module.rds_global.rds_primary_endpoint : module.rds_global.rds_secondary_endpoint
+        DB_USER = "admin"
+        DB_NAME = "school"
+      } : try(v.environment_variables, {})
+      secrets = k == "backend" ? {
+        DB_PASSWORD = module.rds_global.rds_master_secret_arn
+      } : try(v.secrets, {})
     })
   }
 }
 
 module "ecs_primary" {
   source = "github.com/aaditya-2905/Terraform-wrappers//wrappers/ecs-wrapper?ref=main"
+  providers = {
+    aws = aws.primary
+  }
 
   clusters     = { primary = var.ecs_clusters["primary"] }
   ecs_services = { for k, v in local.processed_ecs_services : k => v if v.cluster_name == "three-tier-primary" }
@@ -175,6 +202,9 @@ module "ecs_primary" {
 
 module "ecs_secondary" {
   source = "github.com/aaditya-2905/Terraform-wrappers//wrappers/ecs-wrapper?ref=main"
+  providers = {
+    aws = aws.secondary
+  }
 
   clusters     = { secondary = var.ecs_clusters["secondary"] }
   ecs_services = { for k, v in local.processed_ecs_services : k => v if v.cluster_name == "three-tier-secondary" }
@@ -182,11 +212,17 @@ module "ecs_secondary" {
 
 module "cloudfront" {
   source        = "github.com/aaditya-2905/Terraform-wrappers//wrappers/cloudfront-wrapper?ref=main"
+  providers = {
+    aws = aws.primary
+  }
   distributions = var.cloudfront_distributions
 }
 
 module "s3_frontend" {
   source    = "github.com/aaditya-2905/Terraform-wrappers//wrappers/s3-wrapper?ref=main"
+  providers = {
+    aws = aws.primary
+  }
 
   bucket                 = var.s3_bucket_name
   force_destroy          = var.s3_force_destroy

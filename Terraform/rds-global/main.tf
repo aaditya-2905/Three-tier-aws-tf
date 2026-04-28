@@ -5,10 +5,15 @@ resource "aws_rds_global_cluster" "this" {
   storage_encrypted         = true
 }
 
+resource "aws_kms_key" "primary" {
+  description             = "KMS key for primary aurora"
+  deletion_window_in_days = 7
+}
+
 module "aurora_primary" {
   source = "terraform-aws-modules/rds-aurora/aws"
 
-  name           = "three-tier-app-aurora-primary"
+  name           = "three-tier-aurora-primary-v2"
   engine         = "aurora-mysql"
   engine_version = "8.0.mysql_aurora.3.04.0"
 
@@ -29,6 +34,7 @@ module "aurora_primary" {
   }
 
   storage_encrypted           = true
+  kms_key_id                  = aws_kms_key.primary.arn
   global_cluster_identifier   = aws_rds_global_cluster.this.id
   master_username             = "admin"
   database_name               = "school"
@@ -58,12 +64,18 @@ resource "aws_secretsmanager_secret_version" "db_password" {
   })
 }
 
+resource "aws_kms_key" "secondary" {
+  provider                = aws.secondary
+  description             = "KMS key for secondary aurora"
+  deletion_window_in_days = 7
+}
+
 module "aurora_secondary" {
   source = "terraform-aws-modules/rds-aurora/aws"
 
   providers = { aws = aws.secondary }
 
-  name           = "three-tier-app-aurora-secondary"
+  name           = "three-tier-aurora-secondary-v2"
   engine         = "aurora-mysql"
   engine_version = "8.0.mysql_aurora.3.04.0"
 
@@ -84,13 +96,10 @@ module "aurora_secondary" {
   }
 
   storage_encrypted         = true
-  global_cluster_identifier   = aws_rds_global_cluster.this.id
-  master_username             = "admin"
-  master_password_wo          = random_password.master.result
-  master_password_wo_version  = 1
-  manage_master_user_password = false
-  skip_final_snapshot         = true
-  source_region               = "us-east-1"
+  kms_key_id                = aws_kms_key.secondary.arn
+  global_cluster_identifier = aws_rds_global_cluster.this.id
+  skip_final_snapshot       = true
+  source_region             = "us-east-1"
 
   depends_on = [module.aurora_primary]
 }

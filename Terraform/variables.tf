@@ -32,8 +32,8 @@ variable "vpcs" {
       public_subnet_cidr_blocks  = ["10.0.1.0/24", "10.0.2.0/24"]
       private_subnet_cidr_blocks = ["10.0.3.0/24", "10.0.4.0/24"]
       availability_zones         = ["us-east-1a", "us-east-1b"]
-      enable_nat_gateway         = true
-      single_nat_gateway         = true
+      enable_nat_gateway         = false
+      single_nat_gateway         = false
       tags                       = { environment = "prod", region = "primary" }
     }
     secondary = {
@@ -42,8 +42,8 @@ variable "vpcs" {
       public_subnet_cidr_blocks  = ["10.1.1.0/24", "10.1.2.0/24"]
       private_subnet_cidr_blocks = ["10.1.3.0/24", "10.1.4.0/24"]
       availability_zones         = ["ap-south-1a", "ap-south-1b"]
-      enable_nat_gateway         = true
-      single_nat_gateway         = true
+      enable_nat_gateway         = false
+      single_nat_gateway         = false
       tags                       = { environment = "prod", region = "secondary" }
     }
   }
@@ -102,7 +102,7 @@ variable "primary_alb_target_groups" {
     health_check = optional(object({
       enabled             = optional(bool, true)
       interval            = optional(number, 30)
-      path                = optional(string, "/")
+      path                = optional(string, "/api/health")
       port                = optional(string, "traffic-port")
       protocol            = optional(string, "HTTP")
       timeout             = optional(number, 5)
@@ -117,7 +117,7 @@ variable "primary_alb_target_groups" {
       protocol    = "HTTP"
       target_type = "ip"
       health_check = {
-        path    = "/"
+        path    = "/api/health"
         matcher = "200"
       }
     }
@@ -170,7 +170,7 @@ variable "secondary_alb_target_groups" {
     health_check = optional(object({
       enabled             = optional(bool, true)
       interval            = optional(number, 30)
-      path                = optional(string, "/")
+      path                = optional(string, "/api/health")
       port                = optional(string, "traffic-port")
       protocol            = optional(string, "HTTP")
       timeout             = optional(number, 5)
@@ -185,7 +185,7 @@ variable "secondary_alb_target_groups" {
       protocol    = "HTTP"
       target_type = "ip"
       health_check = {
-        path    = "/"
+        path    = "/api/health"
         matcher = "200"
       }
     }
@@ -445,7 +445,7 @@ variable "s3_ownership_controls" {
 variable "s3_acl" {
   description = "Canned ACL for the S3 bucket"
   type        = string
-  default     = "private"
+  default     = null
 }
 
 variable "s3_server_side_encryption" {
