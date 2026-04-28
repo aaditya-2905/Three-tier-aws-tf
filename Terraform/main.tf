@@ -2,7 +2,10 @@ data "aws_caller_identity" "current" {}
 
 module "vpc_primary" {
   source = "github.com/aaditya-2905/Terraform-wrappers//wrappers/vpc-wrapper?ref=main"
-  vpcs   = { primary = var.vpcs["primary"] }
+  providers = {
+    aws = aws.primary
+  }
+  vpcs = { primary = var.vpcs["primary"] }
 }
 
 module "vpc_secondary" {
@@ -87,9 +90,6 @@ module "sg_primary" {
 
 module "sg_secondary" {
   source = "github.com/aaditya-2905/Terraform-wrappers//wrappers/sg-wrapper?ref=main"
-  providers = {
-    aws = aws.secondary
-  }
 
   sgs = {
     secondary = {
@@ -175,9 +175,6 @@ module "ecs_primary" {
 
 module "ecs_secondary" {
   source = "github.com/aaditya-2905/Terraform-wrappers//wrappers/ecs-wrapper?ref=main"
-  providers = {
-    aws = aws.secondary
-  }
 
   clusters     = { secondary = var.ecs_clusters["secondary"] }
   ecs_services = { for k, v in local.processed_ecs_services : k => v if v.cluster_name == "three-tier-secondary" }
@@ -189,7 +186,7 @@ module "cloudfront" {
 }
 
 module "s3_frontend" {
-  source = "github.com/aaditya-2905/Terraform-wrappers//wrappers/s3-wrapper?ref=main"
+  source    = "github.com/aaditya-2905/Terraform-wrappers//wrappers/s3-wrapper?ref=main"
 
   bucket                 = var.s3_bucket_name
   force_destroy          = var.s3_force_destroy

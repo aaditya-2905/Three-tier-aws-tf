@@ -1,6 +1,6 @@
 output "vpc_ids" {
   description = "IDs of created VPCs"
-  value       = module.vpc.vpc_ids
+  value       = merge(module.vpc_primary.vpc_ids, module.vpc_secondary.vpc_ids)
 }
 
 output "primary_public_subnet_ids" {
@@ -25,7 +25,7 @@ output "secondary_private_subnet_ids" {
 
 output "sg_ids" {
   description = "IDs of created security groups"
-  value       = module.sg.sg_ids
+  value       = merge(module.sg_primary.sg_ids, module.sg_secondary.sg_ids)
 }
 
 output "primary_alb_dns" {
@@ -75,12 +75,12 @@ output "ecr_repository_arns" {
 
 output "ecs_cluster_arns" {
   description = "ARNs of created ECS clusters"
-  value       = module.ecs.cluster_arns
+  value       = merge(module.ecs_primary.cluster_arns, module.ecs_secondary.cluster_arns)
 }
 
 output "ecs_service_arns" {
   description = "ARNs of created ECS services"
-  value       = module.ecs.service_arns
+  value       = merge(module.ecs_primary.service_arns, module.ecs_secondary.service_arns)
 }
 
 output "cloudfront_distribution_ids" {
