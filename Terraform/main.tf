@@ -16,7 +16,7 @@ module "vpc_secondary" {
 data "aws_subnets" "primary_public" {
   filter {
     name   = "vpc-id"
-    values = [module.vpc.vpc_ids["primary"]]
+    values = [module.vpc_primary.vpc_ids["primary"]]
   }
   filter {
     name   = "cidr-block"
@@ -27,7 +27,7 @@ data "aws_subnets" "primary_public" {
 data "aws_subnets" "primary_private" {
   filter {
     name   = "vpc-id"
-    values = [module.vpc.vpc_ids["primary"]]
+    values = [module.vpc_primary.vpc_ids["primary"]]
   }
   filter {
     name   = "cidr-block"
@@ -40,7 +40,7 @@ data "aws_subnets" "secondary_public" {
 
   filter {
     name   = "vpc-id"
-    values = [module.vpc.vpc_ids["secondary"]]
+    values = [module.vpc_secondary.vpc_ids["secondary"]]
   }
   filter {
     name   = "cidr-block"
@@ -53,7 +53,7 @@ data "aws_subnets" "secondary_private" {
 
   filter {
     name   = "vpc-id"
-    values = [module.vpc.vpc_ids["secondary"]]
+    values = [module.vpc_secondary.vpc_ids["secondary"]]
   }
   filter {
     name   = "cidr-block"
