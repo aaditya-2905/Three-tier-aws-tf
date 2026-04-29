@@ -218,6 +218,24 @@ module "cloudfront" {
   distributions = var.cloudfront_distributions
 }
 
+data "aws_iam_policy_document" "s3_frontend_policy" {
+  statement {
+    actions   = ["s3:GetObject"]
+    resources = ["arn:aws:s3:::${var.s3_bucket_name}/*"]
+
+    principals {
+      type        = "Service"
+      identifiers = ["cloudfront.amazonaws.com"]
+    }
+
+    condition {
+      test     = "StringEquals"
+      variable = "AWS:SourceArn"
+      values   = [for k, v in module.cloudfront.distribution_ids : "arn:aws:cloudfront::${data.aws_caller_identity.current.account_id}:distribution/${v}"]
+    }
+  }
+}
+
 module "s3_frontend" {
   source    = "github.com/aaditya-2905/Terraform-wrappers//wrappers/s3-wrapper?ref=main"
   providers = {
@@ -228,11 +246,15 @@ module "s3_frontend" {
   force_destroy          = var.s3_force_destroy
   versioning             = var.s3_versioning
   cors_rule              = var.s3_cors_rule
-  bucket_policy          = var.s3_bucket_policy
   public_access_block    = var.s3_public_access_block
   ownership_controls     = var.s3_ownership_controls
   acl                    = var.s3_acl
   server_side_encryption = var.s3_server_side_encryption
+}
+
+resource "aws_s3_bucket_policy" "frontend_allow_cloudfront" {
+  bucket = module.s3_frontend.bucket_id
+  policy = data.aws_iam_policy_document.s3_frontend_policy.json
 }
 
 module "rds_global" {

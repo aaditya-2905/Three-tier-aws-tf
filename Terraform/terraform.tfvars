@@ -25,6 +25,8 @@ cloudfront_distributions = {
       max_ttl                = 86400
     }
     
+    default_root_object = "index.html"
+    
     enabled = true
     
     restrictions = {

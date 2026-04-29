@@ -371,6 +371,7 @@ variable "cloudfront_distributions" {
     logging_config          = optional(any)
     log_delivery            = optional(any)
     vpc_origin              = optional(any)
+    default_root_object     = optional(string, "index.html")
     tags                    = optional(map(string), {})
   }))
   default = {}
