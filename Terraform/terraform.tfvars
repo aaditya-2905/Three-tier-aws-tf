@@ -6,6 +6,7 @@ cloudfront_distributions = {
         origin_id   = "S3Origin"
       }
     }
+    origin_access_control = {}
     default_cache_behavior = {
       allowed_methods  = ["GET", "HEAD", "OPTIONS"]
       cached_methods   = ["GET", "HEAD"]
