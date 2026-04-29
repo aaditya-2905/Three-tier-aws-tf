@@ -4,9 +4,16 @@ cloudfront_distributions = {
       s3_frontend = {
         domain_name = "three-tier-frontend-bucket-aaditya-2901.s3.amazonaws.com"
         origin_id   = "S3Origin"
+        oac_key     = "s3"
       }
     }
-    origin_access_control = {}
+    origin_access_control = {
+      s3 = {
+        origin_type      = "s3"
+        signing_behavior = "always"
+        signing_protocol = "sigv4"
+      }
+    }
     default_cache_behavior = {
       allowed_methods  = ["GET", "HEAD", "OPTIONS"]
       cached_methods   = ["GET", "HEAD"]
