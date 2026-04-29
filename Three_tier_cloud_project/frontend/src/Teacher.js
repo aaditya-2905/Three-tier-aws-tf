@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './Teacher.css';
 
 function Teacher() {
@@ -21,16 +21,16 @@ function Teacher() {
     return res.json();
   };
 
-  const getData = () => {
+  const getData = useCallback(() => {
     fetch(`${API_BASE_URL}/teacher`)
       .then(handleResponse)
       .then((data) => setData(data))
       .catch((err) => console.log("GET Error:", err.message));
-  };
+  }, [API_BASE_URL]);
 
   useEffect(() => {
     getData();
-  }, []);
+  }, [getData]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
