@@ -4,11 +4,11 @@ cloudfront_distributions = {
       s3_frontend = {
         domain_name = "three-tier-frontend-bucket-aaditya-2901.s3.amazonaws.com"
         origin_id   = "S3Origin"
-        oac_key     = "s3"
+        oac_key     = "three-tier-frontend-oac"
       }
     }
     origin_access_control = {
-      s3 = {
+      three-tier-frontend-oac = {
         origin_type      = "s3"
         signing_behavior = "always"
         signing_protocol = "sigv4"
